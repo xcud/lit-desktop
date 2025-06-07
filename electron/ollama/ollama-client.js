@@ -9,22 +9,22 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Log conversation for debugging MCP tool issues
+ * Log conversation transcript for debugging MCP tool issues
  */
 function logConversation(requestData, responseData, source = "desktop") {
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, -5);
-    const logDir = path.join(__dirname, '../../logs/conversations');
+    const logDir = path.join(__dirname, '../../logs/transcripts');
     
     // Ensure directory exists
     if (!fs.existsSync(logDir)) {
       fs.mkdirSync(logDir, { recursive: true });
     }
     
-    const logFile = path.join(logDir, `conversation-${timestamp}-${source}.log`);
+    const logFile = path.join(logDir, `transcript-${timestamp}-${source}.log`);
     
     let logContent = "=".repeat(80) + "\n";
-    logContent += `CONVERSATION LOG - ${source.toUpperCase()}\n`;
+    logContent += `CONVERSATION TRANSCRIPT - ${source.toUpperCase()}\n`;
     logContent += `Timestamp: ${new Date().toISOString()}\n`;
     logContent += "=".repeat(80) + "\n\n";
     
@@ -49,10 +49,10 @@ function logConversation(requestData, responseData, source = "desktop") {
     logContent += "\n\n";
     
     fs.writeFileSync(logFile, logContent, 'utf8');
-    console.log(`Conversation logged to: ${logFile}`);
+    console.log(`Conversation transcript logged to: ${logFile}`);
     
   } catch (error) {
-    console.error('Failed to log conversation:', error);
+    console.error('Failed to log conversation transcript:', error);
   }
 }
 
@@ -175,7 +175,7 @@ class OllamaClient {
               yield chunk;
             }
             
-            // Log the conversation after stream completes
+            // Log the conversation transcript after stream completes
             logConversation(requestData, fullResponse, "desktop");
             
           } catch (error) {
