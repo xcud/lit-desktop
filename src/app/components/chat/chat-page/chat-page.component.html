@@ -2,7 +2,7 @@
 <div class="chat-container">
   <as-split #split direction="horizontal" [gutterSize]="sidebarOpen ? 8 : 0" (dragEnd)="onSplitDragEnd($event)" class="split-container">
   <!-- Sidebar for chat history -->
-  <as-split-area [size]="sidebarOpen ? sidebarSize : 0" [visible]="sidebarOpen" [order]="0" [minSize]="sidebarOpen ? 260 : 0" [maxSize]="sidebarOpen ? null : 0">
+  <as-split-area [size]="sidebarOpen ? sidebarSize : 0" [visible]="sidebarOpen" [order]="0" [minSize]="sidebarOpen ? 25 : 0" [maxSize]="sidebarOpen ? null : 0">
     <div class="sidebar" *ngIf="sidebarOpen">
       <!-- Enhanced navigation and action bar -->
       <div class="nav-action-bar" [class.selection-mode]="selectionMode">
@@ -13,8 +13,11 @@
           </button>
         </div>
 
+        <!-- Draggable spacer area -->
+        <div class="nav-spacer" style="flex: 1; -webkit-app-region: drag; min-height: 40px;"></div>
+
         <!-- Right side: Conversation actions that switch between individual and bulk -->
-        <div class="action-section">
+        <div class="action-section" style="-webkit-app-region: no-drag;">
           <!-- Individual actions (normal mode) -->
           <div class="individual-actions" *ngIf="!selectionMode">
             <button mat-icon-button
