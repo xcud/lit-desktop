@@ -19,7 +19,7 @@ First, update the version number in `package.json`:
 
 ### 2. Build the Application
 ```bash
-cd /home/ben/lit-platform/lit-chat-electron
+cd /home/ben/lit-platform/lit-desktop
 npm run electron:build
 ```
 
@@ -34,7 +34,7 @@ Check that the build completed successfully:
 ls -la release/
 # Should contain:
 # - LIT-Light-<version>.AppImage (Linux)
-# - lit-chat-electron_<version>_amd64.deb (Debian package)
+# - lit-desktop_<version>_amd64.deb (Debian package)
 # - linux-unpacked/ (unpacked Linux build)
 ```
 

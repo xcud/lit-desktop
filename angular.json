@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "lit-chat-electron": {
+    "lit-desktop": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -69,10 +69,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "lit-chat-electron:build:production"
+              "browserTarget": "lit-desktop:build:production"
             },
             "development": {
-              "browserTarget": "lit-chat-electron:build:development"
+              "browserTarget": "lit-desktop:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -80,7 +80,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "lit-chat-electron:build"
+            "browserTarget": "lit-desktop:build"
           }
         },
         "test": {

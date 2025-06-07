@@ -270,7 +270,7 @@ class MCPManager {
         
         // Create MCP client with correct API (like original desktop app)
         mcpClient = new MCPClient({
-          name: `lit-chat-electron-${serverName}`,
+          name: `lit-desktop-${serverName}`,
           version: '1.0.0',
         });
         

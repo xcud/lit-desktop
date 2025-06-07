@@ -142,7 +142,7 @@ class ServerManager {
       // Create a new MCP client
       console.log(`ServerManager: Creating new MCP client for ${serverName}`);
       const client = new MCPClient({
-        name: `lit-chat-electron-${serverName}`,
+        name: `lit-desktop-${serverName}`,
         version: '1.0.0',
       });
       

@@ -24,7 +24,7 @@ Integrate the standalone `mcp-dynamic-tools` server into the LIT desktop electro
   - Standalone executable
 
 ### Desktop App Current State
-- **MCP Manager**: `/home/ben/lit-platform/lit-chat-electron/electron/mcp-manager.js`
+- **MCP Manager**: `/home/ben/lit-platform/lit-desktop/electron/mcp-manager.js`
 - **Current Config**: Only has `desktop-commander` server configured
 - **Config Location**: `/home/ben/.config/lit-chat/mcp.json`
 
@@ -54,7 +54,7 @@ Integrate the standalone `mcp-dynamic-tools` server into the LIT desktop electro
 
 ### Tools Directory Strategy
 **Option A**: Use user-specific directory like `/home/ben/.config/lit-chat/mcp_tools/`
-**Option B**: Use project-relative directory like `/home/ben/lit-platform/lit-chat-electron/tools/`
+**Option B**: Use project-relative directory like `/home/ben/lit-platform/lit-desktop/tools/`
 **Option C**: Use temporary directory for session-based tools
 
 **Recommendation**: Option A for persistence across sessions

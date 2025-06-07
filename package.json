@@ -1,5 +1,5 @@
 {
-  "name": "lit-chat-electron",
+  "name": "lit-desktop",
   "version": "1.0.0",
   "description": "A lightweight chat interface for Ollama with MCP integration",
   "main": "electron/main.js",
