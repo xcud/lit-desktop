@@ -28,7 +28,7 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   
   // Set to true by default to show the sidebar initially
   sidebarOpen: boolean = true;
-  sidebarSize: number = 280; // Default sidebar size in pixels
+  sidebarSize: number = 220; // Default sidebar size in pixels
   
   currentSessionId: string;
   sessions: [string, ChatSession[]][] = [];
@@ -73,7 +73,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     // Initialize sidebar size from storage or use default
     const savedSidebarSize = localStorage.getItem('sidebarSize');
     if (savedSidebarSize) {
-      this.sidebarSize = parseInt(savedSidebarSize, 10);
+      const saved = parseInt(savedSidebarSize, 10);
+      // If saved size is too wide (old default was 280), reset to new default
+      this.sidebarSize = saved > 250 ? 220 : saved;
     }
     
     // Set model from settings - safely handle the case where settings aren't loaded yet
