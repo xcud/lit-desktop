@@ -132,17 +132,17 @@ select,
 
 // Custom scrollbar styling
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  border-radius: 2px;
+  border-radius: 4px;
   background-color: #eee;
 }
 
 ::-webkit-scrollbar-thumb {
-  border-radius: 2px;
+  border-radius: 4px;
   background-color: #aaa;
 }
 
