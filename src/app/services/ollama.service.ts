@@ -24,12 +24,7 @@ export interface ModelInfo {
 export class OllamaService {
   constructor(private ngZone: NgZone, private settingsService: SettingsService) {
     console.debug('OllamaService initialized');
-    // Log available models on init for debugging
-    this.listModels().then(models => {
-      console.debug('Available models:', models);
-    }).catch(err => {
-      console.error('Error listing models on init:', err);
-    });
+    // Models will be loaded when needed by components
   }
   
   // Get the current Ollama host

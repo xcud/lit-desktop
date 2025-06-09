@@ -27,10 +27,8 @@ class OllamaService {
     
     console.log('OllamaService: Initialized with MCPManager successfully');
     
-    // Wait a bit for MCPManager to initialize, then setup handlers
-    setTimeout(() => {
-      this.setupIpcHandlers();
-    }, 1000);
+    // Setup handlers immediately - no delay needed
+    this.setupIpcHandlers();
   }
   
   /**

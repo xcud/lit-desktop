@@ -2,12 +2,22 @@ import { Injectable } from '@angular/core';
 import { TitleGeneratorService } from '../utils/title-generator.service';
 import { EventService } from './event.service';
 
+// Interface for session state tracking
+export interface SessionState {
+  tool_call_count: number;
+  has_plan: boolean;
+  original_task?: string;
+  task_complexity?: 'simple' | 'complex';
+  domain_hints?: string[];
+}
+
 // Interface for chat session stored in local storage
 export interface ChatSession {
   id: string;
   title: string;
   created: number;
   updated: number;
+  sessionState?: SessionState; // Add session state tracking
 }
 
 // Interface for chat message
@@ -83,7 +93,11 @@ export class ChatStorageService {
       id,
       title,
       created: Date.now(),
-      updated: Date.now()
+      updated: Date.now(),
+      sessionState: {
+        tool_call_count: 0,
+        has_plan: false
+      }
     };
     
     // Create empty chat history
@@ -299,6 +313,63 @@ export class ChatStorageService {
   }
   
   // Generate a title asynchronously for a new chat session
+  // Update session state for a chat session
+  updateSessionState(sessionId: string, sessionState: Partial<SessionState>): void {
+    try {
+      const sessions = this.getSessions();
+      const sessionIndex = sessions.findIndex(s => s.id === sessionId);
+      
+      if (sessionIndex !== -1) {
+        // Merge with existing session state
+        const currentState = sessions[sessionIndex].sessionState || {
+          tool_call_count: 0,
+          has_plan: false
+        };
+        
+        sessions[sessionIndex].sessionState = {
+          ...currentState,
+          ...sessionState
+        };
+        
+        sessions[sessionIndex].updated = Date.now();
+        this.saveSessions(sessions);
+        
+        console.debug('Updated session state for', sessionId, sessions[sessionIndex].sessionState);
+      }
+    } catch (error) {
+      console.error('Error updating session state:', error);
+    }
+  }
+
+  // Get session state for a chat session
+  getSessionState(sessionId: string): SessionState | null {
+    try {
+      const sessions = this.getSessions();
+      const session = sessions.find(s => s.id === sessionId);
+      
+      return session?.sessionState || {
+        tool_call_count: 0,
+        has_plan: false
+      };
+    } catch (error) {
+      console.error('Error getting session state:', error);
+      return {
+        tool_call_count: 0,
+        has_plan: false
+      };
+    }
+  }
+
+  // Increment tool call count for a session
+  incrementToolCallCount(sessionId: string): void {
+    const currentState = this.getSessionState(sessionId);
+    if (currentState) {
+      this.updateSessionState(sessionId, {
+        tool_call_count: currentState.tool_call_count + 1
+      });
+    }
+  }
+
   private async generateTitleAsync(id: string, firstMessage: string): Promise<void> {
     try {
       // Start with a temporary title based on the message - use more characters before truncating

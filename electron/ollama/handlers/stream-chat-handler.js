@@ -76,18 +76,19 @@ class StreamChatHandler {
       // Check if there's already a system message
       const hasSystemMessage = enhancedMessages.some(msg => msg.role === 'system');
       
-      if (!hasSystemMessage && toolInstructions) {
-        // Add system message with tool information at the beginning
+      if (hasSystemMessage) {
+        // If there's already a system message (likely from prompt-composer), don't override it
+        console.log('StreamChatHandler: Found existing system message, preserving prompt-composer content');
+        return enhancedMessages;
+      }
+      
+      // Only add basic tool instructions if no system message exists (fallback case)
+      if (toolInstructions) {
         enhancedMessages.unshift({
           role: 'system',
           content: toolInstructions
         });
-        console.log('StreamChatHandler: Added system message with tool instructions');
-      } else if (hasSystemMessage && toolInstructions) {
-        // Find and enhance existing system message
-        const systemMsgIndex = enhancedMessages.findIndex(msg => msg.role === 'system');
-        enhancedMessages[systemMsgIndex].content += '\n\n' + toolInstructions;
-        console.log('StreamChatHandler: Enhanced existing system message with tool instructions');
+        console.log('StreamChatHandler: Added fallback system message with tool instructions');
       }
       
       return enhancedMessages;

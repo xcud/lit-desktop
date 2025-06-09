@@ -4,6 +4,7 @@ const url = require('url');
 const Store = require('electron-store');
 const ollamaService = require('./ollama-service');
 const mcpService = require('./mcp-service');
+const promptComposerService = require('./prompt-composer-service');
 
 // Keep a global reference of the window object
 let mainWindow;
@@ -62,7 +63,9 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
+      // Temporarily remove sandbox disabling to test
     },
+    // webSecurity: false, // Temporarily comment out
     titleBarStyle: 'hidden', // Hidden title bar for custom styling
     frame: false, // Frameless window
     icon: path.join(__dirname, '..', 'src', 'assets', 'flame.png'),
@@ -118,9 +121,13 @@ function createWindow() {
   });
 }
 
+// Temporarily disable sandbox flags for testing
+// app.commandLine.appendSwitch('--no-sandbox');
+// app.commandLine.appendSwitch('--disable-dev-shm-usage');
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   try {
     // Enable verbose logging
     enableVerboseLogging();
@@ -138,6 +145,10 @@ app.whenReady().then(() => {
     // Initialize MCP service - DISABLED for new MCPManager integration
     console.log('OLD MCP service disabled - using new MCPManager instead');
     // mcpService.initialize(settings);
+    
+    // Initialize Prompt Composer service
+    console.log('Initializing Prompt Composer service');
+    await promptComposerService.initialize();
     
     // Set up app control IPC handlers
     console.log('Setting up IPC handlers');

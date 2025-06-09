@@ -19,6 +19,12 @@ declare global {
         pullModel: (model: string) => Promise<any>;
       };
 
+      // Prompt Composer API
+      promptComposer: {
+        generate: (request: any) => Promise<any>;
+        isAvailable: () => Promise<boolean>;
+      };
+
       // App Control API
       app: {
         minimize: () => Promise<void>;

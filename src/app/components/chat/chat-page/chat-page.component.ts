@@ -5,6 +5,7 @@ import { ChatStorageService, ChatSession } from '../../../services/chat-storage.
 import { SettingsService } from '../../../services/settings.service';
 import { EventService } from '../../../services/event.service';
 import { ChatCommandsService } from '../../../services/chat-commands.service';
+import { PromptComposerService } from '../../../services/prompt-composer.service';
 import { SettingsDialogComponent } from '../../../components/settings/settings-dialog.component';
 import { SplitComponent } from 'angular-split';
 import { Subscription } from 'rxjs';
@@ -19,6 +20,7 @@ import { ChatScreenComponent } from '../chat-screen/chat-screen.component';
 export class ChatPageComponent implements OnInit, OnDestroy {
   @ViewChild('split') splitComponent: SplitComponent;
   @ViewChild(ChatScreenComponent) chatScreen: ChatScreenComponent;
+  @ViewChild('chatInput') chatInput: any;
   
   availableModels: ModelInfo[] = [];
   selectedModel: string = 'llama3:latest'; // Default value
@@ -56,7 +58,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     private changeDetector: ChangeDetectorRef,
     private dialog: MatDialog,
     private eventService: EventService,
-    private chatCommandsService: ChatCommandsService
+    private chatCommandsService: ChatCommandsService,
+    private promptComposerService: PromptComposerService,
+    private ngZone: NgZone
   ) {
     // Initialize with a default value that will be overridden once settings load
     this.selectedModel = 'llama3:latest';
@@ -291,6 +295,44 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     return model?.name || modelId;
   }
   
+  // Test method for debugging input issues
+  testInput() {
+    console.log('Testing input...');
+    console.log('currentInput value:', this.currentInput);
+    console.log('isLoading:', this.isLoading);
+    console.log('chatInput element:', this.chatInput);
+    
+    if (this.chatInput) {
+      console.log('Native element:', this.chatInput.nativeElement);
+      console.log('Element disabled:', this.chatInput.nativeElement.disabled);
+      console.log('Element value:', this.chatInput.nativeElement.value);
+      
+      // Try to focus and set value manually
+      this.chatInput.nativeElement.focus();
+      this.chatInput.nativeElement.value = 'test from method';
+      this.currentInput = 'test from method';
+      this.changeDetector.detectChanges();
+    }
+  }
+
+  // Debug method for input issues
+  onInputChange(event: any) {
+    console.debug('Input changed:', event.target.value, 'currentInput:', this.currentInput);
+    // Run in Angular zone to ensure change detection works
+    this.ngZone.run(() => {
+      this.currentInput = event.target.value;
+      this.changeDetector.detectChanges();
+    });
+  }
+
+  onInputFocus() {
+    console.debug('Input focused, currentInput:', this.currentInput, 'isLoading:', this.isLoading);
+  }
+
+  onInputBlur() {
+    console.debug('Input blurred, currentInput:', this.currentInput);
+  }
+
   // Check if send button should be disabled
   isDisabled(): boolean {
     return !this.currentInput || this.currentInput.trim().length === 0 || this.isLoading;
@@ -298,13 +340,17 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   
   // Send a message
   async sendMessage() {
+    console.log('🚀 START: sendMessage called, isDisabled:', this.isDisabled());
+    
     if (this.isDisabled()) return;
     
     const userMessage = this.currentInput.trim();
+    console.log('📝 User message captured:', userMessage);
     this.currentInput = '';
     
     // Check if it's a special command
     try {
+      console.log('🔍 Checking for special commands...');
       const commandResponse = await firstValueFrom(this.chatCommandsService.processCommand(userMessage));
       
       if (commandResponse) {
@@ -381,6 +427,8 @@ export class ChatPageComponent implements OnInit, OnDestroy {
       console.error('Error processing command:', error);
     }
     
+    console.log('✅ Not a command, proceeding with normal chat flow...');
+    
     // Not a command, process normally
     
     // Add user message to UI
@@ -426,14 +474,79 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     }
     
     // Set loading state
+    console.log('🚀 Starting sendMessage flow...');
     this.isLoading = true;
     
     try {
+      console.log('🔧 Getting session state and MCP config...');
+      // Get current session state
+      const sessionState = this.chatStorage.getSessionState(this.currentSessionId);
+      
+      // Get MCP configuration
+      const mcpConfigStr = await window.electron?.app?.readMcpConfig?.() || '{}';
+      let mcpConfig;
+      try {
+        mcpConfig = JSON.parse(mcpConfigStr);
+      } catch (e) {
+        console.warn('Failed to parse MCP config, using empty config:', e);
+        mcpConfig = { mcpServers: {} };
+      }
+      
+      // Create session state for prompt composer
+      const promptSessionState = this.promptComposerService.createSessionState(
+        this.messages,
+        sessionState?.tool_call_count || 0,
+        sessionState?.original_task
+      );
+      
+      // Detect domain hints from user message
+      const domainHints = this.promptComposerService.detectDomainHints(userMessage);
+      
+      // Generate system prompt using prompt-composer
+      console.log('🧠 About to call prompt-composer with request:', {
+        user_prompt: userMessage,
+        mcp_config_keys: Object.keys(mcpConfig.mcpServers || {}),
+        session_state: promptSessionState
+      });
+      
+      const promptResponse = await this.promptComposerService.generateSystemPrompt({
+        user_prompt: userMessage,
+        mcp_config: mcpConfig,
+        session_state: promptSessionState,
+        domain_hints: domainHints
+      });
+      
+      console.log('🎯 Prompt-composer response:', {
+        system_prompt_length: promptResponse.system_prompt?.length || 0,
+        fallback: promptResponse.fallback || false,
+        recognized_tools_count: (promptResponse as any).recognized_tools?.length || 0,
+        applied_modules: (promptResponse as any).applied_modules || [],
+        has_complexity: !!(promptResponse as any).complexity_assessment
+      });
+      
       // Prepare messages for Ollama
       const ollamaMessages = this.messages.map(msg => ({
         role: msg.isSelf ? 'user' : 'assistant',
         content: msg.content
       }));
+      
+      // Add system prompt as the first message if we got one
+      if (promptResponse.system_prompt && promptResponse.system_prompt.trim()) {
+        console.log('✅ Injecting system prompt into ollamaMessages (length:', promptResponse.system_prompt.length, 'chars)');
+        ollamaMessages.unshift({
+          role: 'system',
+          content: promptResponse.system_prompt
+        });
+      } else {
+        console.log('⚠️ No system prompt to inject');
+      }
+      
+      console.log('📤 Final ollamaMessages being sent to Ollama:', {
+        message_count: ollamaMessages.length,
+        has_system_message: ollamaMessages[0]?.role === 'system',
+        system_prompt_preview: ollamaMessages[0]?.role === 'system' ? 
+          ollamaMessages[0].content.substring(0, 100) + '...' : 'none'
+      });
       
       // Create a streaming message to show progress
       this.messages.push({
@@ -745,7 +858,10 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   
   // Handle keydown for chat input
   handleKeydown(event: KeyboardEvent) {
+    console.log('⌨️ Keydown event:', event.key, 'shiftKey:', event.shiftKey);
+    
     if (event.key === 'Enter' && !event.shiftKey) {
+      console.log('🎯 Enter key pressed, calling sendMessage...');
       event.preventDefault();
       this.sendMessage();
     }

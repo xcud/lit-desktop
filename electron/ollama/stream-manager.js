@@ -135,26 +135,18 @@ class StreamManager {
                 // Try to execute the tool call
                 const toolResult = await this.executeToolCall(toolCallText, mcpManager);
                 
-                if (toolResult) {
-                  // Send tool execution result to client
-                  if (!sender.isDestroyed()) {
-                    sender.send(`ollama:stream-response:${channelId}`, {
-                      content: `\n\n**Tool Result:**\n${toolResult}\n\n`,
-                      done: false
-                    });
-                  }
-                  
-                  // Continue streaming - the model might have more to say
-                  isCollectingToolCall = false;
-                  toolCallText = '';
-                  continue;
-                } else {
-                  // Tool call failed, treat as regular content
-                  console.log('StreamManager: Tool call execution failed, treating as regular content');
-                  isCollectingToolCall = false;
-                  // Add the tool call text to buffer
-                  buffer += toolCallText;
+                // Always send tool results (success or error) to the client and continue streaming
+                if (!sender.isDestroyed()) {
+                  sender.send(`ollama:stream-response:${channelId}`, {
+                    content: `\n\n**Tool Result:**\n${toolResult}\n\n`,
+                    done: false
+                  });
                 }
+                
+                // Reset tool collection state and continue streaming
+                isCollectingToolCall = false;
+                toolCallText = '';
+                continue;
               } else {
                 // Tool call not complete yet, continue collecting
                 continue;
@@ -225,6 +217,10 @@ class StreamManager {
     try {
       // Strip out <think>...</think> blocks before processing (lit-server approach)
       text = text.replace(/<think>.*?<\/think>/gs, '');
+      
+      // Strip out markdown code blocks (```json ... ```)
+      text = text.replace(/```json\s*([\s\S]*?)\s*```/g, '$1');
+      text = text.replace(/```\s*([\s\S]*?)\s*```/g, '$1');
       
       // Simple check for a JSON tool call format (lit-server approach)
       const trimmed = text.trim();

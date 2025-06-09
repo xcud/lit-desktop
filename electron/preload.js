@@ -91,6 +91,35 @@ contextBridge.exposeInMainWorld(
           });
       }
     },
+
+    // Prompt Composer API
+    promptComposer: {
+      generate: (request) => {
+        console.debug('Renderer: Generating system prompt with request:', request);
+        return ipcRenderer.invoke('prompt-composer:generate', request)
+          .then(result => {
+            console.debug('Renderer: System prompt generated:', result);
+            return result;
+          })
+          .catch(error => {
+            console.error('Renderer: Error generating system prompt:', error);
+            throw error;
+          });
+      },
+      
+      isAvailable: () => {
+        console.debug('Renderer: Checking prompt composer availability');
+        return ipcRenderer.invoke('prompt-composer:is-available')
+          .then(result => {
+            console.debug('Renderer: Prompt composer available:', result);
+            return result;
+          })
+          .catch(error => {
+            console.error('Renderer: Error checking prompt composer availability:', error);
+            return false;
+          });
+      }
+    },
     
     // App control
     app: {

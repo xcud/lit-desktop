@@ -449,6 +449,38 @@ class MCPManager {
    * Call an MCP tool and return the result.
    * PHASE 1 REFACTOR: Generic MCP tool calling using stored active clients
    */
+  /**
+   * Apply parameter name mappings for common tool variations
+   */
+  applyParameterMappings(toolName, args) {
+    const parameterMappings = {
+      'read_file': { 'file_path': 'path', 'filepath': 'path', 'filename': 'path', 'file': 'path' },
+      'write_file': { 'file_path': 'path', 'filepath': 'path', 'filename': 'path', 'file': 'path', 'text': 'content', 'data': 'content' },
+      'list_directory': { 'directory': 'path', 'dir': 'path', 'folder': 'path', 'directory_path': 'path' },
+      'search_files': { 'directory': 'path', 'dir': 'path', 'folder': 'path', 'search_path': 'path' },
+      'search_code': { 'directory': 'path', 'dir': 'path', 'folder': 'path', 'search_path': 'path' },
+      'edit_block': { 'file_path': 'file_path', 'filepath': 'file_path', 'filename': 'file_path', 'file': 'file_path' },
+      'get_file_info': { 'file_path': 'path', 'filepath': 'path', 'filename': 'path', 'file': 'path' }
+    };
+    
+    const mappings = parameterMappings[toolName];
+    if (!mappings) {
+      return args; // No mappings for this tool
+    }
+    
+    const mappedArgs = { ...args };
+    
+    // Apply mappings
+    for (const [sourceParam, targetParam] of Object.entries(mappings)) {
+      if (args[sourceParam] !== undefined && args[targetParam] === undefined) {
+        mappedArgs[targetParam] = args[sourceParam];
+        delete mappedArgs[sourceParam];
+      }
+    }
+    
+    return mappedArgs;
+  }
+
   async callTool(serverName, toolName, args, username = 'user') {
     try {
       const clientKey = `${serverName}:${username}`;
@@ -460,10 +492,16 @@ class MCPManager {
         throw new Error(`No active MCP client for ${serverName}`);
       }
       
+      // Apply parameter name mappings for common variations
+      const mappedArgs = this.applyParameterMappings(toolName, args);
+      if (JSON.stringify(mappedArgs) !== JSON.stringify(args)) {
+        console.log(`MCPManager: Applied parameter mapping for ${toolName}:`, mappedArgs);
+      }
+      
       // Use the stored active client to call the tool
       const result = await clientInfo.client.callTool({
         name: toolName,
-        arguments: args
+        arguments: mappedArgs
       });
       
       console.log(`MCPManager: Raw MCP result:`, result);

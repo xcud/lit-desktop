@@ -163,6 +163,7 @@
               [disabled]="isLoading"
               [(ngModel)]="currentInput"
               (keydown)="handleKeydown($event)"
+              #chatInput
             ></textarea>
             <button *ngIf="!isLoading" mat-icon-button (click)="sendMessage()" [disabled]="isDisabled()" matSuffix>
               <mat-icon>arrow_upward</mat-icon>
