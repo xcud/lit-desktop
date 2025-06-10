@@ -147,16 +147,6 @@ MCP servers are configured via a JSON file at `~/.config/lit-desktop/mcp.json`:
 }
 ```
 
-### Available MCP Servers
-
-Popular MCP servers that work with LIT Desktop:
-
-- **@modelcontextprotocol/server-everything** - File system operations
-- **@modelcontextprotocol/server-weather** - Weather information
-- **@modelcontextprotocol/server-brave-search** - Web search
-- **@modelcontextprotocol/server-git** - Git repository operations
-- **@modelcontextprotocol/server-postgres** - Database operations
-
 ## Usage
 
 ### Basic Chat
