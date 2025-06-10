@@ -138,14 +138,14 @@ class ChatHandler {
   }
 }
 
-**KEY INSTRUCTION**: When users ask to "create an MCP tool", use desktop-commander.write_file to save a Python file to /home/ben/.config/lit-chat/mcp_tools/toolname.py. The content must be properly formatted Python code with actual newlines (not literal \\n characters):
+**KEY INSTRUCTION**: When users ask to "create an MCP tool", use desktop-commander.write_file to save a Python file to /home/ben/.config/lit-desktop/mcp_tools/toolname.py. The content must be properly formatted Python code with actual newlines (not literal \\n characters):
 
 Example tool call:
 \`\`\`json
 {
   "tool": "desktop-commander.write_file",
   "arguments": {
-    "path": "/home/ben/.config/lit-chat/mcp_tools/toolname.py",
+    "path": "/home/ben/.config/lit-desktop/mcp_tools/toolname.py",
     "content": "def invoke(arguments):\\n    \\"\\"\\"Tool description here.\\n    \\n    Parameters:\\n    - param_name: Description (type)\\n    \\"\\"\\"\\n    try:\\n        value = arguments.get('param_name', 'default')\\n        return f\\"Result: {value}\\"\\n    except Exception as e:\\n        return f\\"Error: {str(e)}\\""
   }
 }

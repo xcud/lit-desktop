@@ -55,7 +55,7 @@ export class SettingsService {
         this.settings = { ...DEFAULT_SETTINGS, ...savedSettings };
       } else {
         // Fall back to localStorage
-        const savedSettingsStr = localStorage.getItem('lit-chat-settings');
+        const savedSettingsStr = localStorage.getItem('lit-desktop-settings');
         if (savedSettingsStr) {
           const savedSettings = JSON.parse(savedSettingsStr);
           this.settings = { ...DEFAULT_SETTINGS, ...savedSettings };
@@ -96,7 +96,7 @@ export class SettingsService {
         await window.electron.app.saveSettings(this.settings);
       } else {
         // Fall back to localStorage
-        localStorage.setItem('lit-chat-settings', JSON.stringify(this.settings));
+        localStorage.setItem('lit-desktop-settings', JSON.stringify(this.settings));
       }
     } catch (error) {
       console.error('Error saving settings:', error);

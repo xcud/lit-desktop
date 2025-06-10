@@ -1,17 +1,16 @@
-# LIT-Light Release Process
+# LIT Desktop Release Process
 
 ## Overview
-This document describes how to build and deploy a new version of LIT-Light.
+This document describes how to build and distribute lit-desktop for open source releases.
 
 ## Prerequisites
 - Node.js and npm installed
-- AWS CLI configured with access to `s3://lit-install/` bucket
 - Electron and Angular dependencies installed (`npm install`)
 
 ## Release Steps
 
 ### 1. Update Version
-First, update the version number in `package.json`:
+Update the version number in `package.json`:
 ```bash
 # Edit package.json to increment version number
 # Current version: 1.0.0
@@ -19,7 +18,7 @@ First, update the version number in `package.json`:
 
 ### 2. Build the Application
 ```bash
-cd /home/ben/lit-platform/lit-desktop
+cd /path/to/lit-desktop
 npm run electron:build
 ```
 
@@ -33,26 +32,26 @@ Check that the build completed successfully:
 ```bash
 ls -la release/
 # Should contain:
-# - LIT-Light-<version>.AppImage (Linux)
+# - lit-desktop-<version>.AppImage (Linux)
 # - lit-desktop_<version>_amd64.deb (Debian package)
 # - linux-unpacked/ (unpacked Linux build)
 ```
 
-### 4. Upload to S3
-Upload the AppImage to the S3 distribution bucket:
-```bash
-aws s3 cp release/LIT-Light-1.0.0.AppImage s3://lit-install/LIT-Light-1.0.0.AppImage
-```
+### 4. Create GitHub Release
+1. Create a new tag: `git tag v1.0.0`
+2. Push the tag: `git push origin v1.0.0`
+3. Create a GitHub release with the tag
+4. Upload build artifacts to the release
 
 ### 5. Test the Release
 Download and test the released version:
 ```bash
-# Download from S3
-wget https://s3.amazonaws.com/lit-install/LIT-Light-1.0.0.AppImage
+# Download from GitHub releases
+wget https://github.com/owner/lit-desktop/releases/download/v1.0.0/lit-desktop-1.0.0.AppImage
 
 # Make executable and test
-chmod +x LIT-Light-1.0.0.AppImage
-./LIT-Light-1.0.0.AppImage
+chmod +x lit-desktop-1.0.0.AppImage
+./lit-desktop-1.0.0.AppImage
 ```
 
 ## Build Configurations
@@ -62,31 +61,60 @@ The electron-builder configuration in `package.json` supports:
 - **Windows**: NSIS installer (use `npm run electron:build:windows`)
 - **macOS**: .app bundle (use `npm run electron:build:mac`)
 
-## Distribution Structure
+## Platform-Specific Builds
 
+### Linux
+```bash
+npm run electron:build:linux
 ```
-s3://lit-install/
-├── LIT-Light-1.0.0.AppImage
-└── (other releases)
-```
+Produces: AppImage and .deb packages
 
-## Notes
-- The current build only creates Linux distributions by default
-- The AppImage is the primary distribution format
-- Version numbers should follow semantic versioning
-- The S3 bucket `lit-install` is used for public distribution
+### Windows
+```bash
+npm run electron:build:windows
+```
+Produces: .exe installer
+
+### macOS
+```bash
+npm run electron:build:mac
+```
+Produces: .dmg installer
+
+## Distribution Strategy
+
+### GitHub Releases (Primary)
+- Create releases for each version tag
+- Upload platform-specific binaries
+- Include changelog and installation instructions
+
+### Package Managers (Future)
+- Consider npm package for developers
+- Homebrew formula for macOS
+- Snap package for Linux
+- Chocolatey for Windows
+
+## Version Management
+
+Follow semantic versioning:
+- **Major** (X.0.0): Breaking changes
+- **Minor** (0.X.0): New features, backward compatible
+- **Patch** (0.0.X): Bug fixes, backward compatible
 
 ## Quick Release Checklist
 
-For your new version with the context window fix:
+For a new release:
 
 1. **Update version in package.json** (e.g., 1.0.0 → 1.1.0)
-2. **Build**: `npm run electron:build`
-3. **Upload**: `aws s3 cp release/LIT-Light-1.1.0.AppImage s3://lit-install/LIT-Light-1.1.0.AppImage`
-4. **Test**: Download and verify the new release works
+2. **Update CHANGELOG.md** with new features and fixes
+3. **Build**: `npm run electron:build`
+4. **Test locally**: Verify the build works
+5. **Tag**: `git tag v1.1.0 && git push origin v1.1.0`
+6. **Release**: Create GitHub release with artifacts
+7. **Announce**: Update README or project announcements
 
-## Recent Changes in This Release
-- Fixed context window overflow causing tool refusal behavior
-- Desktop now matches server tool usage capabilities
-- Both static (desktop-commander) and dynamic (mcp-dynamic-tools) tools working
-- Improved MCP tool instruction format for better model performance
+## Notes
+- The AppImage is the primary Linux distribution format
+- Version numbers should follow semantic versioning
+- Test releases on multiple platforms when possible
+- Keep build artifacts under 100MB when possible for faster downloads

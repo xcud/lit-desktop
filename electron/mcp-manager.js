@@ -49,8 +49,8 @@ class MCPManager {
    */
   async _loadMcpConfig() {
     // For desktop app, use a different config path than server
-    const configFile = path.join(os.homedir(), '.config', 'lit-chat', 'mcp.json');
-    const cachedToolsFile = path.join(os.homedir(), '.config', 'lit-chat', 'cached_tools.json');
+    const configFile = path.join(os.homedir(), '.config', 'lit-desktop', 'mcp.json');
+    const cachedToolsFile = path.join(os.homedir(), '.config', 'lit-desktop', 'cached_tools.json');
     
     // Default empty configuration
     const defaultConfig = { mcpServers: {} };
@@ -363,7 +363,7 @@ class MCPManager {
    */
   async _updateCachedTools(serverName, tools) {
     try {
-      const cachedToolsFile = path.join(os.homedir(), '.config', 'lit-chat', 'cached_tools.json');
+      const cachedToolsFile = path.join(os.homedir(), '.config', 'lit-desktop', 'cached_tools.json');
       
       let cachedTools = {};
       
@@ -409,8 +409,8 @@ class MCPManager {
    * Save the current MCP configuration to the config file.
    */
   async _saveMcpConfig() {
-    const configFile = path.join(os.homedir(), '.config', 'lit-chat', 'mcp.json');
-    const cachedToolsFile = path.join(os.homedir(), '.config', 'lit-chat', 'cached_tools.json');
+    const configFile = path.join(os.homedir(), '.config', 'lit-desktop', 'mcp.json');
+    const cachedToolsFile = path.join(os.homedir(), '.config', 'lit-desktop', 'cached_tools.json');
     
     try {
       // Ensure directory exists

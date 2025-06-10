@@ -49,5 +49,8 @@ coverage/
 tmp/
 temp/
 
+# Private deployment configuration
+deployment-private.md
+
 plans/
 tests/

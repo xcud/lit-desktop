@@ -5,7 +5,7 @@ const crypto = require('crypto');
 class ImageRendererService {
   constructor() {
     // Directory for storing generated images
-    this.imageDir = path.join(process.env.HOME || process.env.USERPROFILE, '.lit-chat', 'images');
+    this.imageDir = path.join(process.env.HOME || process.env.USERPROFILE, '.lit-desktop', 'images');
     
     // Ensure image directory exists
     fs.mkdirSync(this.imageDir, { recursive: true });

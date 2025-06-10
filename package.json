@@ -27,8 +27,8 @@
   "homepage": "https://www.lit.ai",
   "license": "ISC",
   "build": {
-    "appId": "com.example.lit-chat",
-    "productName": "LIT-Light",
+    "appId": "ai.lit.desktop",
+    "productName": "lit-desktop",
     "directories": {
       "output": "release/"
     },

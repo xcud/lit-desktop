@@ -223,7 +223,7 @@ function setupAppHandlers() {
       const path = require('path');
       const os = require('os');
       
-      const configFile = path.join(os.homedir(), '.config', 'lit-chat', 'mcp.json');
+      const configFile = path.join(os.homedir(), '.config', 'lit-desktop', 'mcp.json');
       
       if (fs.existsSync(configFile)) {
         const configContent = fs.readFileSync(configFile, 'utf8');

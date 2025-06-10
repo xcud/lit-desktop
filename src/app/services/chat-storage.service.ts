@@ -43,8 +43,8 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
   providedIn: 'root'
 })
 export class ChatStorageService {
-  private readonly SESSIONS_KEY = 'lit-chat-sessions';
-  private readonly CHAT_PREFIX = 'lit-chat-';
+  private readonly SESSIONS_KEY = 'lit-desktop-sessions';
+  private readonly CHAT_PREFIX = 'lit-desktop-';
   
   constructor(
     private titleGenerator: TitleGeneratorService,
