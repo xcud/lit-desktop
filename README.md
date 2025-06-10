@@ -72,7 +72,7 @@ A lightweight, modern desktop chat interface for Ollama with advanced MCP (Model
 For enhanced system prompts and better tool integration:
 
 ```bash
-pip install prompt-composer
+pip install system-prompt-composer
 ```
 
 ## Development Setup
