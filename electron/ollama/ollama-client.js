@@ -188,6 +188,44 @@ class OllamaClient {
         options
       };
       
+      // Initialize transcript file at the START of the stream so tool calls can append to it
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, -5);
+      const logDir = path.join(__dirname, '../../logs/transcripts');
+      
+      // Ensure directory exists
+      if (!fs.existsSync(logDir)) {
+        fs.mkdirSync(logDir, { recursive: true });
+      }
+      
+      const logFile = path.join(logDir, `transcript-${timestamp}-desktop.log`);
+      
+      // Create initial transcript content
+      let logContent = "=".repeat(80) + "\n";
+      logContent += `CONVERSATION TRANSCRIPT - DESKTOP\n`;
+      logContent += `Timestamp: ${new Date().toISOString()}\n`;
+      logContent += "=".repeat(80) + "\n\n";
+      
+      logContent += "REQUEST TO LLM:\n";
+      logContent += "-".repeat(40) + "\n";
+      logContent += `Model: ${requestData.model || 'unknown'}\n`;
+      logContent += `Options: ${JSON.stringify(requestData.options || {}, null, 2)}\n\n`;
+      
+      logContent += "Messages:\n";
+      const messages_copy = requestData.messages || [];
+      for (let i = 0; i < messages_copy.length; i++) {
+        const msg = messages_copy[i];
+        logContent += `  [${i}] Role: ${msg.role || 'unknown'}\n`;
+        logContent += `      Content: ${msg.content || ''}\n\n`;
+      }
+      
+      logContent += "\nRESPONSE FROM LLM:\n";
+      logContent += "-".repeat(40) + "\n";
+      
+      // Write initial transcript and set global path for tool appending
+      fs.writeFileSync(logFile, logContent, 'utf8');
+      global.currentTranscriptFile = logFile;
+      console.log(`Transcript initialized: ${logFile}`);
+      
       const stream = await this.client.chat({
         model,
         messages,
@@ -208,12 +246,17 @@ class OllamaClient {
               yield chunk;
             }
             
-            // Log the conversation transcript after stream completes
-            logConversation(requestData, fullResponse, "desktop");
+            // Append the final response to the existing transcript
+            if (global.currentTranscriptFile) {
+              const finalContent = fullResponse || "[No response]";
+              fs.appendFileSync(global.currentTranscriptFile, finalContent + "\n", 'utf8');
+            }
             
           } catch (error) {
-            // Log even if there's an error
-            logConversation(requestData, fullResponse || "[Stream Error]", "desktop");
+            // Append error to transcript
+            if (global.currentTranscriptFile) {
+              fs.appendFileSync(global.currentTranscriptFile, `[Stream Error: ${error.message}]\n`, 'utf8');
+            }
             throw error;
           }
         }
