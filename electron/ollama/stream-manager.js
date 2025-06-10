@@ -4,6 +4,8 @@
  * Responsible for managing streaming interactions with Ollama using MCPManager for tool calls
  */
 
+const { appendToolResult } = require('./ollama-client');
+
 // Keep track of active streaming requests
 const activeStreams = new Map();
 
@@ -286,21 +288,40 @@ class StreamManager {
             if (result && !result.includes('not found') && !result.includes('Error')) {
               console.log('StreamManager: Tool execution completed successfully');
               console.log('StreamManager: Tool result:', result);
+              
+              // Log to transcript
+              appendToolResult(toolCall, result);
+              
               return result;
             }
             else {
               // Return the actual error from the MCP manager instead of generic message
-              return result || `Tool '${toolCall.tool}' not found. Available tools can be viewed by asking "what tools are available?" or create a new tool by asking me to "create an MCP tool".`;
+              const errorResult = result || `Tool '${toolCall.tool}' not found. Available tools can be viewed by asking "what tools are available?" or create a new tool by asking me to "create an MCP tool".`;
+              
+              // Log error to transcript
+              appendToolResult(toolCall, null, errorResult);
+              
+              return errorResult;
             }
 
           }catch (error) {
             console.log('StreamManager: Error calling tool via mcp-dynamic-tools:', error.message);
-            return `Tool '${toolCall.tool}' not found. Available tools can be viewed by asking "what tools are available?" or create a new tool by asking me to "create an MCP tool".`;
+            const errorResult = `Tool '${toolCall.tool}' not found. Available tools can be viewed by asking "what tools are available?" or create a new tool by asking me to "create an MCP tool".`;
+            
+            // Log error to transcript
+            appendToolResult(toolCall, null, error.message);
+            
+            return errorResult;
           }
         }
         
         console.log('StreamManager: Invalid tool format');
-        return `Error: Invalid tool format '${toolCall.tool}'. Expected format: 'server.tool'`;
+        const errorResult = `Error: Invalid tool format '${toolCall.tool}'. Expected format: 'server.tool'`;
+        
+        // Log error to transcript
+        appendToolResult(toolCall, null, errorResult);
+        
+        return errorResult;
       }
       
       console.log(`StreamManager: Calling ${serverName}.${toolName}`);
@@ -310,22 +331,41 @@ class StreamManager {
       
       console.log('StreamManager: Tool execution completed successfully');
       console.log('StreamManager: Tool result:', result);
+      
+      // Log successful result to transcript
+      appendToolResult(toolCall, result);
+      
       return result;
       
     } catch (error) {
       console.error('StreamManager: Tool execution error:', error);
       console.error('StreamManager: Error stack:', error.stack);
-            // Provide more helpful error messages
-      const errorMessage = error.message;
-      if (errorMessage.includes('not found')) {
-        return `Tool '${toolCall.tool}' not found. Available tools can be viewed by asking "what tools are available?" or create a new tool by asking me to "create an MCP tool".`;
-      } else if (errorMessage.includes('No such file or directory')) {
-        return `File not found: ${toolArgs.path || 'unknown file'}. The file does not exist.`;
-      } else if (errorMessage.includes('Permission denied')) {
-        return `Permission denied: Cannot access ${toolArgs.path || 'file/directory'}.`;
-      } else {
-        return `Error executing tool: ${errorMessage}`;
+      
+      // Parse toolCall from toolCallText if needed
+      let parsedToolCall;
+      try {
+        parsedToolCall = JSON.parse(toolCallText);
+      } catch (parseError) {
+        parsedToolCall = { tool: 'unknown', arguments: {} };
       }
+      
+      // Provide more helpful error messages
+      const errorMessage = error.message;
+      let resultMessage;
+      if (errorMessage.includes('not found')) {
+        resultMessage = `Tool '${parsedToolCall.tool}' not found. Available tools can be viewed by asking "what tools are available?" or create a new tool by asking me to "create an MCP tool".`;
+      } else if (errorMessage.includes('No such file or directory')) {
+        resultMessage = `File not found: ${parsedToolCall.arguments?.path || 'unknown file'}. The file does not exist.`;
+      } else if (errorMessage.includes('Permission denied')) {
+        resultMessage = `Permission denied: Cannot access ${parsedToolCall.arguments?.path || 'file/directory'}.`;
+      } else {
+        resultMessage = `Error executing tool: ${errorMessage}`;
+      }
+      
+      // Log error to transcript
+      appendToolResult(parsedToolCall, null, error.message);
+      
+      return resultMessage;
     }
   }
   

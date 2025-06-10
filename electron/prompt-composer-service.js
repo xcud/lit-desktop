@@ -5,7 +5,8 @@
  */
 
 const { ipcMain } = require('electron');
-const { composeSystemPrompt, getStatus } = require('system-prompt-composer');
+const { composeSystemPrompt, composeSystemPromptWithCustomDir, getStatus } = require('system-prompt-composer');
+const path = require('path');
 
 class PromptComposerService {
   constructor() {
@@ -66,7 +67,18 @@ class PromptComposerService {
           }
         }
         
-        const response = await composeSystemPrompt(request);
+        // Use local prompts directory if it exists, otherwise fall back to built-in
+        const localPromptsDir = path.join(__dirname, '../prompts');
+        const fs = require('fs');
+        
+        let response;
+        if (fs.existsSync(localPromptsDir)) {
+          console.log('📁 Using local prompts directory:', localPromptsDir);
+          response = await composeSystemPromptWithCustomDir(request, localPromptsDir);
+        } else {
+          console.log('📦 Using built-in prompts');
+          response = await composeSystemPrompt(request);
+        }
         
         if (response.fallback) {
           console.log('Using fallback prompt - consider installing prompt-composer');

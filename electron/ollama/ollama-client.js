@@ -51,8 +51,41 @@ function logConversation(requestData, responseData, source = "desktop") {
     fs.writeFileSync(logFile, logContent, 'utf8');
     console.log(`Conversation transcript logged to: ${logFile}`);
     
+    // Store the log file path globally so tool execution can append to it
+    global.currentTranscriptFile = logFile;
+    
   } catch (error) {
     console.error('Failed to log conversation transcript:', error);
+  }
+}
+
+/**
+ * Append tool execution results to the current transcript
+ */
+function appendToolResult(toolCall, toolResult, error = null) {
+  try {
+    if (!global.currentTranscriptFile) {
+      console.warn('No current transcript file to append tool result to');
+      return;
+    }
+    
+    let appendContent = "\nTOOL EXECUTION:\n";
+    appendContent += "-".repeat(40) + "\n";
+    appendContent += `Tool Call: ${JSON.stringify(toolCall, null, 2)}\n\n`;
+    
+    if (error) {
+      appendContent += "Tool Error:\n";
+      appendContent += `${error.toString()}\n\n`;
+    } else {
+      appendContent += "Tool Result:\n";
+      appendContent += `${typeof toolResult === 'object' ? JSON.stringify(toolResult, null, 2) : toolResult}\n\n`;
+    }
+    
+    fs.appendFileSync(global.currentTranscriptFile, appendContent, 'utf8');
+    console.log(`Tool result appended to transcript: ${global.currentTranscriptFile}`);
+    
+  } catch (error) {
+    console.error('Failed to append tool result to transcript:', error);
   }
 }
 
@@ -213,3 +246,4 @@ class OllamaClient {
 }
 
 module.exports = OllamaClient;
+module.exports.appendToolResult = appendToolResult;

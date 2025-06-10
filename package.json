@@ -84,7 +84,7 @@
     "zone.js": "^0.13.3"
   },
   "dependencies": {
-    "system-prompt-composer": "^1.0.3",
+    "system-prompt-composer": "^1.0.5",
     "@modelcontextprotocol/sdk": "^1.11.2",
     "electron-store": "^8.1.0",
     "lodash": "^4.17.21",
