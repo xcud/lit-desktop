@@ -858,10 +858,10 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   
   // Handle keydown for chat input
   handleKeydown(event: KeyboardEvent) {
-    console.log('⌨️ Keydown event:', event.key, 'shiftKey:', event.shiftKey);
+    console.debug('⌨️ Keydown event:', event.key, 'shiftKey:', event.shiftKey);
     
     if (event.key === 'Enter' && !event.shiftKey) {
-      console.log('🎯 Enter key pressed, calling sendMessage...');
+      console.debug('🎯 Enter key pressed, calling sendMessage...');
       event.preventDefault();
       this.sendMessage();
     }
