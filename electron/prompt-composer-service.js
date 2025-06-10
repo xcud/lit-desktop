@@ -1,7 +1,8 @@
 /**
  * Prompt Composer Service - Electron Main Process
  * 
- * Provides intelligent system prompt generation based on MCP tools and session state
+ * MODIFIED TO USE PIP-INSTALLED PROMPT-COMPOSER
+ * Production Python: /tmp/prompt_composer_production_test/bin/python
  */
 
 const { spawn } = require('child_process');
@@ -10,28 +11,26 @@ const { ipcMain } = require('electron');
 
 class PromptComposerService {
   constructor() {
-    this.promptComposerPath = null;
+    // Use the production venv Python with pip-installed prompt-composer
+    this.promptComposerPath = '/tmp/prompt_composer_production_test/bin/python';
     this.isInitialized = false;
-    console.log('PromptComposerService constructor complete');
+    console.log('PromptComposerService constructor - using production venv');
   }
 
-  /**
-   * Initialize the prompt composer service
-   */
   async initialize() {
-    console.log('PromptComposerService initialization started');
+    console.log('PromptComposerService initialization with production venv');
     
     try {
-      // Try to find prompt-composer Python package
-      this.promptComposerPath = await this.findPromptComposer();
+      // Test that prompt-composer is available in the production venv
+      await this.testPromptComposer();
       this.isInitialized = true;
       
       // Setup IPC handlers
       this.setupIpcHandlers();
       
-      console.log('PromptComposerService initialization complete');
+      console.log('PromptComposerService initialization complete - production venv working');
     } catch (error) {
-      console.error('Failed to initialize PromptComposerService:', error);
+      console.error('Failed to initialize PromptComposerService with production venv:', error);
       this.isInitialized = false;
       
       // Still setup IPC handlers for fallback behavior
@@ -39,14 +38,9 @@ class PromptComposerService {
     }
   }
 
-  /**
-   * Find the prompt-composer Python package
-   */
-  async findPromptComposer() {
+  async testPromptComposer() {
     return new Promise((resolve, reject) => {
-      // Check for venv Python first - correct path
-      const venvPython = path.join(__dirname, '../../prompt-composer/venv/bin/python');
-      const python = spawn(venvPython, ['-c', 'import prompt_composer; print("OK")']);
+      const python = spawn(this.promptComposerPath, ['-c', 'import prompt_composer; print("OK")']);
       
       let output = '';
       let error = '';
@@ -61,26 +55,23 @@ class PromptComposerService {
       
       python.on('close', (code) => {
         if (code === 0 && output.trim() === 'OK') {
-          console.log('Found prompt-composer in venv');
-          resolve(venvPython);
+          console.log('✅ prompt-composer available in production venv');
+          resolve();
         } else {
-          console.error('prompt-composer not found in venv:', error);
+          console.error('❌ prompt-composer not available in production venv:', error);
           reject(new Error(`prompt-composer not available: ${error}`));
         }
       });
     });
   }
 
-  /**
-   * Setup IPC handlers for renderer process communication
-   */
   setupIpcHandlers() {
-    console.log('Setting up PromptComposer IPC handlers');
+    console.log('Setting up PromptComposer IPC handlers for production venv');
 
     // Generate system prompt
     ipcMain.handle('prompt-composer:generate', async (event, request) => {
       try {
-        console.log('IPC: prompt-composer:generate called');
+        console.log('IPC: prompt-composer:generate called (production venv)');
         return await this.generateSystemPrompt(request);
       } catch (error) {
         console.error('Error generating system prompt:', error);
@@ -95,11 +86,6 @@ class PromptComposerService {
     });
   }
 
-  /**
-   * Generate system prompt using prompt-composer
-   * @param {Object} request - Request object with user_prompt, mcp_config, session_state
-   * @returns {Promise<Object>} Response with system_prompt
-   */
   async generateSystemPrompt(request) {
     if (!this.isInitialized) {
       console.log('PromptComposer not initialized, using fallback');
@@ -107,7 +93,7 @@ class PromptComposerService {
     }
 
     return new Promise((resolve, reject) => {
-      console.log('Generating system prompt with prompt-composer');
+      console.log('Generating system prompt with production venv prompt-composer');
       
       // Ensure MCP config has the required 'name' field for each server
       if (request.mcp_config && request.mcp_config.mcpServers) {
@@ -118,23 +104,21 @@ class PromptComposerService {
         }
       }
       
-      // Create the Python script to call prompt-composer from the venv
-      const venvPython = path.join(__dirname, '../../prompt-composer/venv/bin/python');
+      // Use the pip-installed prompt-composer (no directory changes needed!)
       const pythonScript = `
 import json
 import sys
-import os
+
 try:
-    # Set the prompts directory to the correct path
-    os.chdir('${path.join(__dirname, '../../prompt-composer')}')
-    from prompt_composer import compose_system_prompt
+    # Import the pip-installed prompt-composer
+    import prompt_composer
     
     # Read request from stdin
     request_json = sys.stdin.read()
     request = json.loads(request_json)
     
-    # Generate system prompt
-    response_json = compose_system_prompt(json.dumps(request))
+    # Generate system prompt using the package API
+    response_json = prompt_composer.compose_system_prompt(json.dumps(request))
     response = json.loads(response_json)
     
     # Output result
@@ -148,7 +132,7 @@ except Exception as e:
     print(json.dumps(error_response))
 `;
 
-      const python = spawn(venvPython, ['-c', pythonScript]);
+      const python = spawn(this.promptComposerPath, ['-c', pythonScript]);
       
       let output = '';
       let error = '';
@@ -173,7 +157,7 @@ except Exception as e:
               console.error('Prompt composer error:', response.error);
               resolve(this.getFallbackPrompt(request));
             } else {
-              console.log('System prompt generated successfully');
+              console.log('✅ System prompt generated successfully with production venv');
               resolve(response);
             }
           } else {
@@ -188,11 +172,6 @@ except Exception as e:
     });
   }
 
-  /**
-   * Generate a smart fallback prompt when prompt-composer is unavailable
-   * @param {Object} request - Request object
-   * @returns {Object} Response with enhanced system prompt
-   */
   getFallbackPrompt(request) {
     console.log('Using enhanced fallback system prompt');
     
