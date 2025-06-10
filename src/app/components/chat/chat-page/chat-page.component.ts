@@ -294,30 +294,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     const model = this.availableModels.find(m => m.model === modelId);
     return model?.name || modelId;
   }
-  
-  // Test method for debugging input issues
-  testInput() {
-    console.log('Testing input...');
-    console.log('currentInput value:', this.currentInput);
-    console.log('isLoading:', this.isLoading);
-    console.log('chatInput element:', this.chatInput);
-    
-    if (this.chatInput) {
-      console.log('Native element:', this.chatInput.nativeElement);
-      console.log('Element disabled:', this.chatInput.nativeElement.disabled);
-      console.log('Element value:', this.chatInput.nativeElement.value);
-      
-      // Try to focus and set value manually
-      this.chatInput.nativeElement.focus();
-      this.chatInput.nativeElement.value = 'test from method';
-      this.currentInput = 'test from method';
-      this.changeDetector.detectChanges();
-    }
-  }
 
   // Debug method for input issues
   onInputChange(event: any) {
-    console.debug('Input changed:', event.target.value, 'currentInput:', this.currentInput);
     // Run in Angular zone to ensure change detection works
     this.ngZone.run(() => {
       this.currentInput = event.target.value;
@@ -326,11 +305,11 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   }
 
   onInputFocus() {
-    console.debug('Input focused, currentInput:', this.currentInput, 'isLoading:', this.isLoading);
+    // Input focused
   }
 
   onInputBlur() {
-    console.debug('Input blurred, currentInput:', this.currentInput);
+    // Input blurred
   }
 
   // Check if send button should be disabled

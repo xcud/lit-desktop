@@ -47,17 +47,12 @@ class PromptComposerService {
   setupIpcHandlers() {
     // Only setup IPC handlers if we're in an Electron environment
     if (!ipcMain || typeof ipcMain.handle !== 'function') {
-      console.log('Not in Electron environment - skipping IPC handler setup');
       return;
     }
-    
-    console.log('Setting up PromptComposer IPC handlers');
 
     // Generate system prompt
     ipcMain.handle('prompt-composer:generate', async (event, request) => {
       try {
-        console.log('IPC: prompt-composer:generate called');
-        
         // Ensure MCP config has the required 'name' field for each server
         if (request.mcp_config?.mcpServers) {
           for (const [serverName, serverConfig] of Object.entries(request.mcp_config.mcpServers)) {

@@ -32,8 +32,6 @@ class ToolExecutor {
         throw new Error(`Invalid tool name: ${fullToolName}. Expected format: serverName.toolName`);
       }
       
-      console.log(`ToolExecutor: callTool called for ${serverName}.${toolName} with args:`, JSON.stringify(args, null, 2));
-      
       return await this.executeToolCall(serverName, toolName, args);
     } catch (error) {
       console.error(`ToolExecutor: Error calling tool ${fullToolName}:`, error);
@@ -60,8 +58,6 @@ class ToolExecutor {
     
     // Handle internal services
     if (serverConfig.command === 'internal') {
-      console.log(`ToolExecutor: Handling internal service: ${serverName}`);
-      
       // Special handling for image-renderer
       // if (serverName === 'image-renderer') {
       //   const imageRendererService = require('../image-renderer-service');
@@ -76,7 +72,6 @@ class ToolExecutor {
     try {
       // Start the server if it's not already running
       if (!serverManager.isServerRunning(serverName)) {
-        console.log(`ToolExecutor: Server ${serverName} not running, starting it for tool call`);
         await serverManager.startServer(serverName);
       }
       

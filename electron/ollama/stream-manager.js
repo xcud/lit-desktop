@@ -14,7 +14,7 @@ class StreamManager {
    * Create a new StreamManager
    */
   constructor() {
-    console.log('StreamManager: Initialized with MCPManager support');
+    // StreamManager initialized
   }
   
   /**
@@ -94,9 +94,6 @@ class StreamManager {
           
           // Simple tool call detection - look for JSON with "tool" field  
           if (!isCollectingToolCall && (content.includes('{') && fullResponse.includes('"tool"'))) {
-            console.log('StreamManager: Detected start of potential tool call');
-            console.log('StreamManager: Current fullResponse length:', fullResponse.length);
-            console.log('StreamManager: Current fullResponse preview:', fullResponse.substring(fullResponse.length - 200));
             isCollectingToolCall = true;
             braceCount = 0; // Initialize brace counting (lit-server approach)
             
@@ -105,8 +102,6 @@ class StreamManager {
               if (char === '{') braceCount++;
               if (char === '}') braceCount--;
             }
-            
-            console.log('StreamManager: Initial brace count:', braceCount);
             
             // Stop adding to buffer when collecting tool call
             flushBuffer(); // Flush what we have so far

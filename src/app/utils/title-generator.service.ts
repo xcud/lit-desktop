@@ -156,8 +156,6 @@ export class TitleGeneratorService {
     const limitedMessage = message.substring(0, 500);
     
     try {
-      console.log('Generating title for message:', limitedMessage);
-      
       // Create a system prompt for title generation
       const systemPrompt = {
         role: 'system',
@@ -184,8 +182,6 @@ export class TitleGeneratorService {
         // Remove quotes if present
         title = title.replace(/^["'](.*)["']$/, '$1').trim();
         
-        console.log('Raw generated title:', title);
-        
         // Add an emoji based on keyword matching
         let addedEmoji = false;
         let titleWithEmoji = title;
@@ -195,7 +191,6 @@ export class TitleGeneratorService {
           if (title.toLowerCase().includes(keyword) && !addedEmoji) {
             titleWithEmoji = `${title} ${emoji}`;
             addedEmoji = true;
-            console.log(`Added ${emoji} emoji based on keyword '${keyword}' in title`);
             break;
           }
         }
@@ -207,7 +202,6 @@ export class TitleGeneratorService {
             if (messageLower.includes(keyword) && !addedEmoji) {
               titleWithEmoji = `${title} ${emoji}`;
               addedEmoji = true;
-              console.log(`Added ${emoji} emoji based on keyword '${keyword}' in message`);
               break;
             }
           }

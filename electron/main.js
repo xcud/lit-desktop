@@ -170,7 +170,6 @@ function setupAppHandlers() {
   // App window controls
   ipcMain.handle('app:minimize', () => {
     if (mainWindow) mainWindow.minimize();
-    console.log('Window minimized');
     return true;
   });
   
@@ -178,17 +177,14 @@ function setupAppHandlers() {
     if (mainWindow) {
       if (mainWindow.isMaximized()) {
         mainWindow.unmaximize();
-        console.log('Window unmaximized');
       } else {
         mainWindow.maximize();
-        console.log('Window maximized');
       }
     }
     return true;
   });
   
   ipcMain.handle('app:close', () => {
-    console.log('Window close requested');
     if (mainWindow) mainWindow.close();
     return true;
   });
@@ -196,35 +192,23 @@ function setupAppHandlers() {
   // Settings management
   ipcMain.handle('app:get-settings', () => {
     const settings = store.store;
-    console.log('Settings requested by renderer:', settings);
     return settings;
   });
   
   ipcMain.handle('app:save-settings', (event, settings) => {
     try {
-      console.log('Saving settings:', settings);
-      
       // Update Ollama host if changed
       if (settings.ollamaHost !== store.get('ollamaHost')) {
-        console.log(`Updating Ollama host from ${store.get('ollamaHost')} to ${settings.ollamaHost}`);
         ollamaService.setHost(settings.ollamaHost);
       }
       
       // Handle MCP changes - DISABLED for new MCPManager integration
       if (settings.mcpEnabled !== store.get('mcpEnabled')) {
         console.log('OLD MCP service change ignored - using new MCPManager instead');
-        // if (settings.mcpEnabled) {
-        //   console.log('Enabling MCP service');
-        //   mcpService.initialize(settings);
-        // } else {
-        //   console.log('Disabling MCP service');
-        //   mcpService.cleanup();
-        // }
       }
       
       // Save all settings
       store.set(settings);
-      console.log('Settings saved successfully');
       return true;
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -243,7 +227,6 @@ function setupAppHandlers() {
       
       if (fs.existsSync(configFile)) {
         const configContent = fs.readFileSync(configFile, 'utf8');
-        console.log('Read actual mcp.json file for settings UI');
         return configContent;
       } else {
         // Return default config if file doesn't exist
@@ -266,7 +249,6 @@ function setupAppHandlers() {
   ipcMain.handle('app:get-discovered-tools', () => {
     try {
       const allTools = mcpService.getAllTools();
-      console.log(`Getting all discovered tools (count: ${allTools.length})`);
       
       // Group tools by server
       const toolsByServer = {};
@@ -289,7 +271,6 @@ function setupAppHandlers() {
         }
       });
       
-      console.log(`Grouped tools by server: ${Object.keys(toolsByServer).join(', ')}`);
       return toolsByServer;
     } catch (error) {
       console.error('Error getting discovered tools:', error);
