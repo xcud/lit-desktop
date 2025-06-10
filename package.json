@@ -9,7 +9,7 @@
     "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "electron:serve": "wait-on http://localhost:4201 && electron .",
+    "electron:serve": "wait-on http://localhost:4201 && electron . --no-sandbox",
     "electron:dev": "NODE_ENV=development concurrently \"ng serve --port 4201\" \"npm run electron:serve\"",
     "electron:dev:devtools": "NODE_ENV=development OPEN_DEVTOOLS=true concurrently \"ng serve --port 4201\" \"npm run electron:serve\"",
     "electron:build": "npm run build && electron-builder",
@@ -84,6 +84,7 @@
     "zone.js": "^0.13.3"
   },
   "dependencies": {
+    "system-prompt-composer": "^1.0.3",
     "@modelcontextprotocol/sdk": "^1.11.2",
     "electron-store": "^8.1.0",
     "lodash": "^4.17.21",
