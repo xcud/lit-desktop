@@ -32,18 +32,53 @@
     overflow-x: hidden;
     
     .message-self, .message-other {
-      max-width: 80%;
+      max-width: 80% !important;
       margin-bottom: 16px;
       padding: 16px 20px;
       border-radius: 16px;
       position: relative;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      overflow: visible !important; // Keep visible to prevent scrollbars
+      word-wrap: break-word !important; // Apply to container too
+      
+      // Ensure all child elements respect the container width
+      * {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
       
       .message-content {
         word-wrap: break-word;
+        word-break: break-word;
+        overflow-wrap: break-word;
         white-space: normal;
         font-size: 15px;
         line-height: 1.5;
+        max-width: 100%;
+        overflow: visible; // No scrollbars on individual bubbles
+        min-height: auto; // Don't constrain height
+        height: auto; // Let content determine height
+        
+        // Force break for any long content
+        * {
+          max-width: 100% !important;
+          overflow-wrap: break-word !important;
+          word-break: break-word !important;
+        }
+        
+        // Special handling for JSON-like content and long strings
+        p, div, span {
+          word-break: break-all !important;
+          overflow-wrap: anywhere !important;
+        }
+        
+        // Specifically target markdown component and its contents
+        markdown, markdown *, ::ng-deep markdown, ::ng-deep markdown * {
+          max-width: 100% !important;
+          overflow-wrap: break-word !important;
+          word-break: break-word !important;
+          box-sizing: border-box !important;
+        }
         
         // Markdown styles
         h1, h2, h3, h4, h5, h6 {
@@ -70,19 +105,27 @@
           padding: 0.2em 0.4em;
           border-radius: 3px;
           font-family: monospace;
+          word-break: break-all;
+          overflow-wrap: break-word;
         }
         
         pre {
           background-color: rgba(0, 0, 0, 0.05);
           padding: 1em;
           border-radius: 5px;
-          overflow-x: auto;
+          overflow: visible !important; // No scrollbars in chat bubbles
           margin: 0.5em 0;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+          word-break: break-all !important;
           
           code {
             font-family: monospace;
             padding: 0;
             background-color: transparent;
+            white-space: pre-wrap !important; // Wrap long lines instead of scrolling
+            word-break: break-all !important;
+            overflow-wrap: break-word !important;
           }
         }
         
@@ -97,11 +140,15 @@
           border-collapse: collapse;
           margin: 0.5em 0;
           width: 100%;
+          max-width: 100%;
+          overflow: visible; // No scrollbars in chat bubbles
+          display: table; // Use normal table display
           
           th, td {
             border: 1px solid rgba(0, 0, 0, 0.1);
             padding: 0.5em;
             text-align: left;
+            word-break: break-word; // Allow cell content to wrap
           }
           
           th {
@@ -254,9 +301,13 @@
         background-color: rgba(0, 0, 0, 0.05);
         padding: 10px;
         border-radius: 5px;
-        overflow-x: auto;
+        overflow: visible !important; // No scrollbars in chat bubbles
         margin: 10px 0;
         font-family: monospace;
+        max-width: 100%;
+        box-sizing: border-box;
+        white-space: pre-wrap; // Wrap instead of scroll
+        word-break: break-all;
       }
     }
     
@@ -486,6 +537,48 @@
     
     .empty-icon {
       background-color: #424242;
+    }
+  }
+}
+
+// Global styles to ensure content doesn't overflow chat bubbles
+::ng-deep .message-self,
+::ng-deep .message-other {
+  overflow: visible !important; // Force visible for both directions
+  min-height: auto !important;
+  height: auto !important;
+  
+  .message-content {
+    overflow: visible !important; // No scrollbars on bubbles
+    min-height: auto !important;
+    height: auto !important;
+    
+    * {
+      max-width: 100% !important;
+      overflow-wrap: break-word !important;
+      word-break: break-word !important;
+      box-sizing: border-box !important;
+      min-height: auto !important;
+      height: auto !important;
+    }
+    
+    // Target markdown specifically
+    markdown, markdown * {
+      max-width: 100% !important;
+      overflow-wrap: break-word !important;
+      word-break: break-word !important;
+      min-height: auto !important;
+      height: auto !important;
+    }
+    
+    // Target code and pre elements specifically - no scrollbars
+    pre, code {
+      max-width: 100% !important;
+      overflow: visible !important; // No scrollbars in bubbles
+      word-break: break-all !important;
+      white-space: pre-wrap !important; // Wrap instead of scroll
+      min-height: auto !important;
+      height: auto !important;
     }
   }
 }
