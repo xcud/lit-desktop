@@ -1,7 +1,8 @@
 /**
- * StreamChatHandler - Updated to use MCPManager
+ * StreamChatHandler - Updated to use MCPManager with recursive tool calling
  * 
- * Handles streaming chat requests to Ollama with MCPManager integration
+ * Handles streaming chat requests to Ollama with MCPManager integration and 
+ * unlimited sequential tool calls via ToolCallProcessor
  */
 
 class StreamChatHandler {
@@ -127,6 +128,8 @@ class StreamChatHandler {
     "param1": "value1"
   }
 }
+
+You can execute multiple tools in sequence to complete complex tasks. After each tool execution, you'll receive the result and can decide whether to use additional tools or provide a final response. You have access to up to 20 sequential tool calls per conversation.
 
 **KEY INSTRUCTION**: When users ask to "create an MCP tool", use desktop-commander.write_file to save a Python file to /home/ben/.config/lit-desktop/mcp_tools/toolname.py. The content must be properly formatted Python code with actual newlines (not literal \\n characters):
 
