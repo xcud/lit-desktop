@@ -49,11 +49,23 @@ tools = [
     { name = "get_file_info", description = "Get file metadata and information" },
 ]
 
+[mcp_dynamic_tools]
+# Specific pattern for mcp-dynamic-tools server
+command_patterns = ["python"]
+arg_patterns = ["server.py", "mcp_dynamic_tools", "dynamic_tools"]
+name_patterns = ["mcp-dynamic-tools"]
+
+tools = [
+    { name = "create_tool", description = "Create a new dynamic MCP tool" },
+    { name = "password_generator", description = "Generate secure passwords" },
+    { name = "greeting", description = "Generate greetings" },
+]
+
 [dynamic_servers]
 # Patterns that indicate dynamic/programmable servers
 command_patterns = ["python", "node", "mcp_server"]
-arg_patterns = ["mcp_server.py", "mcp-server", "dynamic"]
-name_patterns = ["dynamic", "custom", "lit-platform", "programmable"]
+arg_patterns = ["mcp_server.py", "mcp-server", "dynamic", "server.py"]
+name_patterns = ["dynamic", "custom", "lit-platform", "programmable", "mcp-dynamic-tools"]
 
 tools = [
     { name = "create_tool", description = "Create a new dynamic MCP tool" },

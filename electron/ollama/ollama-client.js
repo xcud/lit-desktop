@@ -69,17 +69,20 @@ function appendToolResult(toolCall, toolResult, error = null) {
       return;
     }
     
-    let appendContent = "\nTOOL EXECUTION:\n";
+    let appendContent = "\n" + "=".repeat(80) + "\n";
+    appendContent += `ACTUAL TOOL EXECUTION #${Date.now()}\n`;
+    appendContent += `Server: ${toolCall.tool ? toolCall.tool.split('.')[0] : 'unknown'}\n`;
+    appendContent += `Tool: ${toolCall.tool ? toolCall.tool.split('.')[1] : 'unknown'}\n`;
+    appendContent += `Arguments: ${JSON.stringify(toolCall.arguments || {}, null, 2)}\n`;
     appendContent += "-".repeat(40) + "\n";
-    appendContent += `Tool Call: ${JSON.stringify(toolCall, null, 2)}\n\n`;
     
     if (error) {
-      appendContent += "Tool Error:\n";
-      appendContent += `${error.toString()}\n\n`;
+      appendContent += `TOOL ERROR:\n${error.toString()}\n`;
     } else {
-      appendContent += "Tool Result:\n";
-      appendContent += `${typeof toolResult === 'object' ? JSON.stringify(toolResult, null, 2) : toolResult}\n\n`;
+      appendContent += `TOOL RESULT:\n${typeof toolResult === 'object' ? JSON.stringify(toolResult, null, 2) : toolResult}\n`;
     }
+    
+    appendContent += "=".repeat(80) + "\n\n";
     
     fs.appendFileSync(global.currentTranscriptFile, appendContent, 'utf8');
     console.log(`Tool result appended to transcript: ${global.currentTranscriptFile}`);
@@ -290,3 +293,4 @@ class OllamaClient {
 
 module.exports = OllamaClient;
 module.exports.appendToolResult = appendToolResult;
+module.exports.logConversation = logConversation;

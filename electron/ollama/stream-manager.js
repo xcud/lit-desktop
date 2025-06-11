@@ -4,7 +4,7 @@
  * Responsible for managing streaming interactions with Ollama using MCPManager for tool calls
  */
 
-const { appendToolResult } = require('./ollama-client');
+const { appendToolResult, logConversation } = require('./ollama-client');
 
 // Keep track of active streaming requests
 const activeStreams = new Map();
@@ -41,7 +41,9 @@ class StreamManager {
       // Store the AbortController for potential cancellation
       activeStreams.set(channelId, {
         abortController,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        requestData: { model, messages, options }, // Store for logging on cancellation
+        partialResponse: '' // Track partial response for cancellation logging
       });
       
       // Variables to track tool calls during streaming
@@ -49,6 +51,7 @@ class StreamManager {
       let toolCallText = '';
       let fullResponse = '';
       let braceCount = 0; // For balanced brace detection (lit-server approach)
+      let lastProcessedIndex = 0; // Track where we last processed for multiple tool calls
       
       // Stream the response
       const stream = await ollamaClient.createChatStream(
@@ -87,69 +90,37 @@ class StreamManager {
           const streamInfo = activeStreams.get(channelId);
           if (streamInfo) {
             streamInfo.timestamp = Date.now();
+            streamInfo.partialResponse = fullResponse; // Track partial response for cancellation logging
           }
           
           // Build up the full response for tool call detection
           fullResponse += content;
           
           // Simple tool call detection - look for JSON with "tool" field  
-          if (!isCollectingToolCall && (content.includes('{') && fullResponse.includes('"tool"'))) {
-            isCollectingToolCall = true;
-            braceCount = 0; // Initialize brace counting (lit-server approach)
+          if (!isCollectingToolCall && ( (content.includes('{') || content.includes('}') ) && fullResponse.includes('"tool"'))) {
+            console.log('StreamManager: Potential tool call detected, checking for complete JSON from last processed index');
             
-            // Count braces in the full response so far
-            for (let char of fullResponse) {
-              if (char === '{') braceCount++;
-              if (char === '}') braceCount--;
-            }
+            // Try to extract a complete JSON tool call starting from where we last processed
+            const extractResult = this.extractJsonFromText(fullResponse, lastProcessedIndex);
             
-            // Stop adding to buffer when collecting tool call
-            flushBuffer(); // Flush what we have so far
-            continue;
-          }
-          
-          if (isCollectingToolCall) {
-            // We're collecting a tool call, count braces in this token
-            for (let char of content) {
-              if (char === '{') braceCount++;
-              if (char === '}') braceCount--;
-            }
-            
-            // console.log('StreamManager: Token brace count update:', braceCount);
-            
-            // Check if braces are balanced (lit-server approach)
-            if (braceCount === 0) {
-              console.log('StreamManager: Balanced braces detected, attempting tool extraction');
+            if (extractResult.json && this.isCompleteToolCall(extractResult.json)) {
+              console.log('StreamManager: Complete tool call found:', extractResult.json);
               
-              // Try to extract tool call from complete response
-              toolCallText = this.extractJsonFromText(fullResponse);
-              console.log('StreamManager: Extracted tool call:', toolCallText);
+              // Execute the tool call
+              const toolResult = await this.executeToolCall(extractResult.json, mcpManager);
               
-              if (toolCallText && this.isCompleteToolCall(toolCallText)) {
-                console.log('StreamManager: Tool call appears complete, attempting execution');
-                console.log('StreamManager: Final tool call JSON:', toolCallText);
-                
-                // Try to execute the tool call
-                const toolResult = await this.executeToolCall(toolCallText, mcpManager);
-                
-                // Always send tool results (success or error) to the client and continue streaming
-                if (!sender.isDestroyed()) {
-                  sender.send(`ollama:stream-response:${channelId}`, {
-                    content: `\n\n**Tool Result:**\n${toolResult}\n\n`,
-                    done: false
-                  });
-                }
-                
-                // Reset tool collection state and continue streaming
-                isCollectingToolCall = false;
-                toolCallText = '';
-                continue;
-              } else {
-                // Tool call not complete yet, continue collecting
-                continue;
+              // Send tool result to client
+              if (!sender.isDestroyed()) {
+                sender.send(`ollama:stream-response:${channelId}`, {
+                  content: `\n\n**Tool Result:**\n${toolResult}\n\n`,
+                  done: false
+                });
               }
-            } else {
-              // Tool call detected but braces not balanced yet, continue collecting
+              
+              // Update our tracking
+              lastProcessedIndex = extractResult.nextIndex;
+              
+              // Continue processing - there might be more tool calls
               continue;
             }
           }
@@ -184,6 +155,18 @@ class StreamManager {
       
       console.log('StreamManager: Stream completed successfully');
       
+      // Log the conversation transcript for debugging
+      try {
+        const requestData = {
+          model,
+          messages,
+          options
+        };
+        logConversation(requestData, fullResponse, 'desktop');
+      } catch (logError) {
+        console.error('StreamManager: Error logging conversation:', logError);
+      }
+      
       // Clean up the stream
       activeStreams.delete(channelId);
       
@@ -209,8 +192,9 @@ class StreamManager {
   
   /**
    * Extract JSON from text (using lit-server proven approach)
+   * Now supports multiple JSON objects in sequence
    */
-  extractJsonFromText(text) {
+  extractJsonFromText(text, startIndex = 0) {
     try {
       // Strip out <think>...</think> blocks before processing (lit-server approach)
       text = text.replace(/<think>.*?<\/think>/gs, '');
@@ -219,19 +203,51 @@ class StreamManager {
       text = text.replace(/```json\s*([\s\S]*?)\s*```/g, '$1');
       text = text.replace(/```\s*([\s\S]*?)\s*```/g, '$1');
       
-      // Simple check for a JSON tool call format (lit-server approach)
-      const trimmed = text.trim();
-      if (!(trimmed.startsWith("{") && trimmed.endsWith("}"))) {
-        return '';
+      // Look for JSON starting from startIndex
+      const searchText = text.substring(startIndex);
+      
+      // Find the first opening brace after startIndex
+      const openBraceIndex = searchText.indexOf('{');
+      if (openBraceIndex === -1) {
+        return { json: '', nextIndex: startIndex };
       }
       
-      // Try to parse the JSON directly (lit-server approach)
-      JSON.parse(trimmed);
-      return trimmed;
+      // Start parsing from the opening brace
+      let braceCount = 0;
+      let jsonEndIndex = -1;
+      const actualStartIndex = startIndex + openBraceIndex;
+      
+      for (let i = actualStartIndex; i < text.length; i++) {
+        const char = text[i];
+        if (char === '{') {
+          braceCount++;
+        } else if (char === '}') {
+          braceCount--;
+          if (braceCount === 0) {
+            jsonEndIndex = i;
+            break;
+          }
+        }
+      }
+      
+      if (jsonEndIndex === -1) {
+        return { json: '', nextIndex: startIndex };
+      }
+      
+      // Extract the JSON substring
+      const jsonText = text.substring(actualStartIndex, jsonEndIndex + 1);
+      
+      // Try to parse to validate
+      JSON.parse(jsonText);
+      
+      return { 
+        json: jsonText, 
+        nextIndex: jsonEndIndex + 1 
+      };
       
     } catch (error) {
       console.log('StreamManager: JSON extraction error:', error.message);
-      return '';
+      return { json: '', nextIndex: startIndex };
     }
   }
   
@@ -375,6 +391,15 @@ class StreamManager {
     const streamInfo = activeStreams.get(channelId);
     if (streamInfo) {
       console.log(`StreamManager: Cancelling stream: ${channelId}`);
+      
+      // Log partial conversation before cancellation
+      try {
+        const partialResponse = streamInfo.partialResponse + '\n\n[CANCELLED BY USER]';
+        logConversation(streamInfo.requestData, partialResponse, 'desktop-cancelled');
+      } catch (logError) {
+        console.error('StreamManager: Error logging cancelled conversation:', logError);
+      }
+      
       streamInfo.abortController.abort();
       activeStreams.delete(channelId);
       return true;

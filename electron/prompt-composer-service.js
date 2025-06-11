@@ -53,11 +53,18 @@ class PromptComposerService {
     // Generate system prompt
     ipcMain.handle('prompt-composer:generate', async (event, request) => {
       try {
-        // Ensure MCP config has the required 'name' field for each server
+        // Ensure MCP config has the required fields for each server
         if (request.mcp_config?.mcpServers) {
           for (const [serverName, serverConfig] of Object.entries(request.mcp_config.mcpServers)) {
+            // Ensure all required fields are present
             if (!serverConfig.name) {
               serverConfig.name = serverName;
+            }
+            if (!serverConfig.command) {
+              serverConfig.command = serverConfig.command || 'unknown';
+            }
+            if (!serverConfig.args) {
+              serverConfig.args = serverConfig.args || [];
             }
           }
         }
@@ -69,7 +76,10 @@ class PromptComposerService {
         let response;
         if (fs.existsSync(localPromptsDir)) {
           console.log('📁 Using local prompts directory:', localPromptsDir);
-          response = await composeSystemPromptWithCustomDir(request, localPromptsDir);
+          // Use native function directly with JSON string
+          const requestJson = JSON.stringify(request);
+          const responseJson = composeSystemPromptWithCustomDir(requestJson, localPromptsDir);
+          response = JSON.parse(responseJson);
         } else {
           console.log('📦 Using built-in prompts');
           response = await composeSystemPrompt(request);
