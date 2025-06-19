@@ -6,6 +6,7 @@ import { SettingsService } from '../../../services/settings.service';
 import { EventService } from '../../../services/event.service';
 import { ChatCommandsService } from '../../../services/chat-commands.service';
 import { PromptComposerService } from '../../../services/prompt-composer.service';
+import { TokenCounterService } from '../../../services/token-counter.service';
 import { SettingsDialogComponent } from '../../../components/settings/settings-dialog.component';
 import { SplitComponent } from 'angular-split';
 import { Subscription } from 'rxjs';
@@ -48,8 +49,46 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   // Store the cancel function for the current stream
   private _cancelCurrentStream: (() => void) | null = null;
   
+  // Token counting properties
+  public conversationTokens: number = 0;
+  public draftTokens: number = 0;
+  public tokenCountDisplay: string = '';
+  private draftCountDebounce: any = null;
+  
   // Subscription for title updates
   private titleSubscription: Subscription;
+  
+  // Token counting methods
+  private updateConversationTokenCount(): void {
+    this.conversationTokens = this.tokenCounterService.countConversationTokens(this.messages);
+    this.updateTokenDisplay();
+  }
+  
+  private updateDraftTokenCount(): void {
+    // Clear existing debounce timer
+    if (this.draftCountDebounce) {
+      clearTimeout(this.draftCountDebounce);
+    }
+    
+    // Set new debounced update
+    this.draftCountDebounce = setTimeout(() => {
+      this.draftTokens = this.tokenCounterService.countTokens(this.currentInput);
+      this.updateTokenDisplay();
+    }, 200); // 200ms debounce
+  }
+  
+  private updateTokenDisplay(): void {
+    this.tokenCountDisplay = this.tokenCounterService.formatTokenCount(
+      this.conversationTokens, 
+      this.draftTokens
+    );
+  }
+  
+  // Helper method to add message and update token count
+  private addMessageAndUpdateTokens(message: ChatMessage): void {
+    this.messages.push(message);
+    this.updateConversationTokenCount();
+  }
   
   constructor(
     private ollamaService: OllamaService,
@@ -60,6 +99,7 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     private eventService: EventService,
     private chatCommandsService: ChatCommandsService,
     private promptComposerService: PromptComposerService,
+    private tokenCounterService: TokenCounterService,
     private ngZone: NgZone
   ) {
     // Initialize with a default value that will be overridden once settings load
@@ -106,6 +146,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
         this.isCurrentSessionTemporary = true;
         this.messages = [];
         // Don't refresh sessions yet - temporary session shouldn't appear in list
+        
+        // Update token count for empty conversation
+        this.updateConversationTokenCount();
       } else {
         // Get the most recent session
         const mostRecent = this.getAllSessions().sort((a, b) => b.updated - a.updated)[0];
@@ -123,6 +166,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
             model: msg.model
           }));
         }
+        
+        // Update token count for loaded conversation
+        this.updateConversationTokenCount();
       }
     } catch (error) {
       console.error('Error loading chat sessions:', error);
@@ -300,6 +346,7 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     // Run in Angular zone to ensure change detection works
     this.ngZone.run(() => {
       this.currentInput = event.target.value;
+      this.updateDraftTokenCount(); // Add token counting
       this.changeDetector.detectChanges();
     });
   }
@@ -334,14 +381,14 @@ export class ChatPageComponent implements OnInit, OnDestroy {
       
       if (commandResponse) {
         // It's a command, add user message to UI
-        this.messages.push({
+        this.addMessageAndUpdateTokens({
           isSelf: true,
           content: userMessage,
           timestamp: new Date().toISOString()
         });
         
         // Add command response to UI
-        this.messages.push({
+        this.addMessageAndUpdateTokens({
           isSelf: false,
           content: commandResponse.content,
           timestamp: new Date().toISOString(),
@@ -411,7 +458,7 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     // Not a command, process normally
     
     // Add user message to UI
-    this.messages.push({
+    this.addMessageAndUpdateTokens({
       isSelf: true,
       content: userMessage,
       timestamp: new Date().toISOString()
@@ -673,6 +720,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.isCurrentSessionTemporary = true;
     this.messages = [];
     
+    // Update token count for empty conversation
+    this.updateConversationTokenCount();
+    
     console.debug('Created temporary session:', tempSession.id);
     // Note: Don't refresh sessions yet - temporary session shouldn't appear in list
   }
@@ -697,6 +747,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     } else {
       this.messages = [];
     }
+    
+    // Update token count for newly loaded conversation
+    this.updateConversationTokenCount();
   }
   
   // Delete a chat session

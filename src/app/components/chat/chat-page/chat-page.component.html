@@ -163,6 +163,7 @@
               [disabled]="isLoading"
               [(ngModel)]="currentInput"
               (keydown)="handleKeydown($event)"
+              (input)="onInputChange($event)"
               #chatInput
             ></textarea>
             <button *ngIf="!isLoading" mat-icon-button (click)="sendMessage()" [disabled]="isDisabled()" matSuffix>
@@ -175,7 +176,10 @@
         </div>
         <div class="status-hint text-hint">
           <span *ngIf="isLoading">Generating content...</span>
-          <span *ngIf="!isLoading">Lit can make mistakes</span>
+          <span *ngIf="!isLoading">
+            <span>Lit can make mistakes</span>
+            <span *ngIf="tokenCountDisplay" class="token-counter"> • {{ tokenCountDisplay }}</span>
+          </span>
         </div>
       </div>
     </div>
