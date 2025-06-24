@@ -69,11 +69,13 @@ A lightweight, modern desktop chat interface for Ollama with advanced MCP (Model
 
 ### Enhanced Experience (Optional)
 
-For enhanced system prompts and better tool integration:
+For enhanced system prompts and better tool integration (optional):
 
 ```bash
-pip install system-prompt-composer
+npm install system-prompt-composer
 ```
+
+> **Note**: The app works without system-prompt-composer, but installing it provides enhanced AI prompts that adapt based on available tools and task complexity.
 
 ## Development Setup
 
